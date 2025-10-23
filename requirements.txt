@@ -1,0 +1,4 @@
+mysql_connector_repackaged==0.3.1
+pandas==2.3.3
+sshtunnel==0.4.0
+streamlit==1.48.1
