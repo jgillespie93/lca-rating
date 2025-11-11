@@ -20,9 +20,6 @@ def get_db_connection():
     )
     return conn
 
-        # user= st.write("sql8802126",
-        # password="jwZrdj3nbP",
-        # database="sql8802126",
 # -------------------------
 # Streamlit setup
 # -------------------------
