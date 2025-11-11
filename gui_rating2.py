@@ -25,10 +25,11 @@ def get_db_connection():
 # -------------------------
 st.set_page_config(page_title="LCA Lookup Rating Tool", layout="centered")
 dirname = os.path.dirname(__file__)
-lookup_path = os.path.join(dirname, "data/fullsentence_results_only.csv")
+lookup_path = os.path.join(dirname, "data/fullsentence_results_only_new.csv")
 lookup_df = pd.read_csv(lookup_path)
 
 lookup_items = lookup_df.iloc[:, 0].astype(str).str.strip()
+portion_size = lookup_df.iloc[:, 20].astype(str).str.strip() 
 rating_cols = [5, 8, 11, 14]
 lookup_df_ratings = lookup_df.iloc[:, rating_cols].astype(str).fillna("").applymap(str.strip)
 source_cols = [6, 9, 12, 15]
@@ -45,9 +46,24 @@ if "pending_ratings" not in st.session_state:
 if not st.session_state.researcher:
     name = st.text_input("Enter your name to start:", "")
     if st.button("Start") and name.strip():
-        st.session_state.researcher = name.strip()
-        st.rerun()
+        researcher = name.strip()
+        st.session_state.researcher = researcher
 
+        # 🧩 Load progress from DB if exists
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT current_index FROM researcher_progress WHERE researcher=%s", (researcher,))
+            row = cursor.fetchone()
+            st.session_state.index = row["current_index"] if row else 0
+            cursor.close()
+            conn.close()
+            st.success(f"Welcome back, {researcher}! Resuming from item {st.session_state.index + 1}.")
+        except Exception as e:
+            st.error(f"Error loading progress: {e}")
+            st.session_state.index = 0
+
+        st.rerun()
 else:
     researcher = st.session_state.researcher
     st.title(f"LCA Lookup Rating Tool - {researcher}")
@@ -74,6 +90,14 @@ else:
                             VALUES (%s, %s, %s, %s)
                         """
                         cursor.executemany(insert_query, st.session_state.pending_ratings)
+                        conn.commit()
+
+                        progress_query = """
+                            INSERT INTO researcher_progress (researcher, current_index)
+                            VALUES (%s, %s)
+                            ON DUPLICATE KEY UPDATE current_index = %s
+                        """
+                        cursor.execute(progress_query, (researcher, st.session_state.index, st.session_state.index))
                         conn.commit()
                         st.session_state.pending_ratings.clear()  # reset cache
                         st.toast("Ratings batch saved to database.")
@@ -113,6 +137,14 @@ else:
                         """
                         cursor.executemany(insert_query, st.session_state.pending_ratings)
                         conn.commit()
+
+                        progress_query = """
+                            INSERT INTO researcher_progress (researcher, current_index)
+                            VALUES (%s, %s)
+                            ON DUPLICATE KEY UPDATE current_index = %s
+                        """
+                        cursor.execute(progress_query, (researcher, st.session_state.index, st.session_state.index))
+                        conn.commit()
                         st.session_state.pending_ratings.clear()
                         st.toast("💾 Ratings batch saved to database.")
                     except Exception as e:
@@ -149,6 +181,15 @@ else:
                 """
                 cursor.executemany(insert_query, st.session_state.pending_ratings)
                 conn.commit()
+
+                progress_query = """
+                    INSERT INTO researcher_progress (researcher, current_index)
+                    VALUES (%s, %s)
+                    ON DUPLICATE KEY UPDATE current_index = %s
+                """
+                cursor.execute(progress_query, (researcher, st.session_state.index, st.session_state.index))
+                conn.commit()
+
                 st.session_state.pending_ratings.clear()
                 st.success("💾 Remaining ratings saved.")
             except Exception as e:
