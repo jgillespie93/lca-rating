@@ -71,7 +71,7 @@ else:
     i = st.session_state.index
     if i < len(lookup_df):
         item = lookup_items[i]
-        st.subheader(f"Item: **{item}**")
+        st.subheader(f"Item: **{item}** (Portion size: {portion_size[i]})")
 
         options = lookup_df_ratings.iloc[i].tolist()
         sources = lookup_df_sources.iloc[i].tolist()
