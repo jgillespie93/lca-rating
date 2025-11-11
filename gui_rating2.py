@@ -25,7 +25,7 @@ def get_db_connection():
 # -------------------------
 st.set_page_config(page_title="LCA Lookup Rating Tool", layout="centered")
 dirname = os.path.dirname(__file__)
-lookup_path = os.path.join(dirname, "data/fullsentence_results_only_new.csv")
+lookup_path = os.path.join(dirname, "data/fullsentence_new.csv")
 lookup_df = pd.read_csv(lookup_path)
 
 lookup_items = lookup_df.iloc[:, 0].astype(str).str.strip()
@@ -71,7 +71,7 @@ else:
     i = st.session_state.index
     if i < len(lookup_df):
         item = lookup_items[i]
-        st.subheader(f"Item: **{item}** (Portion size: {portion_size[i]})")
+        st.subheader(f"Item: **{item}**")
 
         options = lookup_df_ratings.iloc[i].tolist()
         sources = lookup_df_sources.iloc[i].tolist()
